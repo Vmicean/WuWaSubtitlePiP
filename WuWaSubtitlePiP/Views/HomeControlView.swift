@@ -213,7 +213,7 @@ public struct HomeControlView: View {
                 )
             }
 
-            Text("Nhấn vào biểu tượng phát sóng bên dưới, chọn "WuWaBroadcastExtension" rồi bấm Bắt đầu phát sóng. Sau đó mở Wuthering Waves để chơi.")
+            Text("Nhấn vào biểu tượng phát sóng bên dưới, chọn 'WuWaBroadcastExtension' rồi bấm Bắt đầu phát sóng. Sau đó mở Wuthering Waves để chơi.")
                 .font(.footnote)
                 .foregroundStyle(WuWaTheme.textSecondary)
 
