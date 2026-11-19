@@ -81,12 +81,12 @@ public final class AppState {
 
     public init(
         ipcBridge: BroadcastIPCBridge = BroadcastIPCBridge(role: .hostApp),
-        translationService: OfflineTranslationService = OfflineTranslationService(),
-        pipManager: PiPSubtitleManager = PiPSubtitleManager()
+        translationService: OfflineTranslationService? = nil,
+        pipManager: PiPSubtitleManager? = nil
     ) {
         self.ipcBridge = ipcBridge
-        self.translationService = translationService
-        self.pipManager = pipManager
+        self.translationService = translationService ?? OfflineTranslationService()
+        self.pipManager = pipManager ?? PiPSubtitleManager()
         self.roi = Self.loadPersistedROI() ?? .wuWaDialogueDefault
         self.appearance = Self.loadPersistedAppearance() ?? .default
     }
