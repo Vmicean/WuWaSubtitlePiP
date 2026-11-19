@@ -1,0 +1,109 @@
+name: WuWaSubtitlePiP
+options:
+  bundleIdPrefix: com.wuwatranslator
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+  defaultConfig: Release
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    SWIFT_STRICT_CONCURRENCY: targeted
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_IDENTITY: ""
+    PROVISIONING_PROFILE_SPECIFIER: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    CLANG_ENABLE_MODULES: "YES"
+    DEAD_CODE_STRIPPING: "YES"
+  configs:
+    Debug:
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      GCC_OPTIMIZATION_LEVEL: "0"
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+
+targets:
+  WuWaSubtitlePiP:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: WuWaSubtitlePiP
+        excludes:
+          - "**/*.plist"
+          - "**/*.entitlements"
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_NAME: WuWaSubtitlePiP
+        PRODUCT_BUNDLE_IDENTIFIER: com.wuwatranslator.app
+        INFOPLIST_FILE: WuWaSubtitlePiP/Info.plist
+        CODE_SIGN_ENTITLEMENTS: WuWaSubtitlePiP/WuWaSubtitlePiP.entitlements
+        GENERATE_INFOPLIST_FILE: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+    dependencies:
+      - target: WuWaBroadcastExtension
+        embed: true
+    scheme:
+      testTargets:
+        - WuWaSubtitlePiPTests
+
+  WuWaBroadcastExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: BroadcastExtension
+        excludes:
+          - "**/*.plist"
+          - "**/*.entitlements"
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_NAME: WuWaBroadcastExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.wuwatranslator.app.BroadcastExtension
+        INFOPLIST_FILE: BroadcastExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BroadcastExtension/BroadcastExtension.entitlements
+        GENERATE_INFOPLIST_FILE: "NO"
+        APPLICATION_EXTENSION_API_ONLY: "YES"
+        SKIP_INSTALL: "YES"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+          - "@executable_path/../../Frameworks"
+
+  WuWaSubtitlePiPTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: WuWaSubtitlePiP
+    settings:
+      base:
+        PRODUCT_NAME: WuWaSubtitlePiPTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.wuwatranslator.app.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/WuWaSubtitlePiP.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WuWaSubtitlePiP"

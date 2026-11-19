@@ -1,0 +1,123 @@
+name: Build WuWaSubtitlePiP Unsigned IPA
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-package:
+    name: Test & Build Unsigned IPA (iOS 18 / Swift 5.10)
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16
+        run: |
+          set -euo pipefail
+          XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -n "$XCODE_APP" ] && [ -d "$XCODE_APP" ]; then
+            sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen via Homebrew
+        run: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          xcodegen generate --spec project.yml
+
+      - name: Run WuWaSubtitlePiPTests on iOS Simulator
+        run: |
+          set -euo pipefail
+          SIM_UDID=$(xcrun simctl list devices available iPhone --json | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          devices = []
+          for runtime, items in data.get("devices", {}).items():
+              if "iOS-18" in runtime:
+                  for item in items:
+                      if item.get("isAvailable"):
+                          devices.append(item)
+          if not devices:
+              for runtime, items in data.get("devices", {}).items():
+                  for item in items:
+                      if item.get("isAvailable"):
+                          devices.append(item)
+          preferred = [d for d in devices if "Pro Max" in d["name"]]
+          chosen = preferred[0] if preferred else devices[0]
+          print(chosen["udid"])
+          ')
+          echo "Using iOS Simulator UDID: $SIM_UDID"
+
+          xcodebuild test \
+            -project WuWaSubtitlePiP.xcodeproj \
+            -scheme WuWaSubtitlePiP \
+            -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            -derivedDataPath build/TestDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Build unsigned Release app for iphoneos
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project WuWaSubtitlePiP.xcodeproj \
+            -scheme WuWaSubtitlePiP \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build/ReleaseDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Verify app bundle, embedded BroadcastExtension, and package IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="build/ReleaseDerivedData/Build/Products/Release-iphoneos/WuWaSubtitlePiP.app"
+          EXT_PATH="$APP_PATH/PlugIns/WuWaBroadcastExtension.appex"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: WuWaSubtitlePiP.app not found at $APP_PATH"
+            exit 1
+          fi
+
+          if [ ! -d "$EXT_PATH" ]; then
+            echo "Error: WuWaBroadcastExtension.appex not found inside PlugIns/"
+            exit 1
+          fi
+
+          rm -rf build/Payload build/WuWaSubtitlePiP-unsigned.ipa
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/WuWaSubtitlePiP.app
+
+          (
+            cd build
+            zip -r -9 -y WuWaSubtitlePiP-unsigned.ipa Payload
+          )
+
+          ls -lh build/WuWaSubtitlePiP-unsigned.ipa
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WuWaSubtitlePiP-unsigned-ipa
+          path: build/WuWaSubtitlePiP-unsigned.ipa
+          retention-days: 30
